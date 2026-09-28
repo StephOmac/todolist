@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5ed">
+  <title>Today, in hand</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18231f;
+      --muted: #69746e;
+      --paper: #f3f5ed;
+      --surface: #fffefa;
+      --line: #dce2d9;
+      --green: #286b50;
+      --green-dark: #1f513d;
+      --coral: #c95d46;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: radial-gradient(#b7c4b6 0.65px, transparent 0.65px);
+      background-size: 15px 15px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+    main { width: min(720px, 100%); margin: 0 auto; padding: 58px 22px 72px; }
+    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 42px; }
+    .mark { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .mark-icon { display: grid; width: 32px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: white; background: var(--green); }
+    .date { color: var(--muted); font-size: 13px; }
+    h1 { max-width: 540px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(42px, 8vw, 68px); font-weight: 400; line-height: 0.98; }
+    .intro { margin: 15px 0 30px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+    .add-form { display: flex; gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 26px #20362a0a; }
+    .add-form input { flex: 1; min-width: 0; padding: 11px 12px; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; }
+    button { min-height: 42px; border: 0; border-radius: 5px; font: inherit; cursor: pointer; }
+    .add-button { padding: 0 18px; color: #fff; background: var(--green); font-weight: 700; }
+    .add-button:hover { background: var(--green-dark); }
+    .notice { margin: 10px 4px 0; color: var(--coral); font-size: 13px; }
+    .list-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 38px 0 12px; }
+    .list-heading h2 { margin: 0; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .count { color: var(--muted); font-size: 13px; }
+    .tasks { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+    .task { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 66px; padding: 10px 4px; border-bottom: 1px solid var(--line); animation: arrive 220ms ease-out both; }
+    .toggle { display: grid; width: 28px; aspect-ratio: 1; place-items: center; border: 1px solid #aab7ac; border-radius: 50%; color: white; background: transparent; }
+    .toggle:hover { border-color: var(--green); }
+    .task.done .toggle { border-color: var(--green); background: var(--green); }
+    .task-title { overflow-wrap: anywhere; font-size: 16px; line-height: 1.4; }
+    .task.done .task-title { color: #87918a; text-decoration: line-through; text-decoration-color: #a8b1a9; }
+    .delete { width: 38px; color: #839087; background: transparent; font-size: 20px; }
+    .delete:hover { color: var(--coral); background: #c95d4610; }
+    .empty { padding: 32px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-family: Georgia, "Times New Roman", serif; font-size: 21px; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 520px) { main { padding: 30px 18px 50px; } .masthead { margin-bottom: 36px; } .date { text-align: right; } .intro { font-size: 15px; } .add-button { padding: 0 13px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div class="mark"><span class="mark-icon" aria-hidden="true">✓</span><span>Small steps</span></div>
+      <time class="date" id="today"></time>
+    </header>
+    <section aria-labelledby="page-title">
+      <h1 id="page-title">Today, in hand.</h1>
+      <p class="intro">Make room for what matters. One thing at a time.</p>
+      <form class="add-form" action="{{ url_for('add_task') }}" method="post">
+        <input name="title" type="text" maxlength="240" placeholder="What needs doing?" aria-label="New task" required autofocus>
+        <button class="add-button" type="submit">Add task</button>
+      </form>
+      {% for message in get_flashed_messages() %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
+    </section>
+    <section aria-labelledby="tasks-heading">
+      <div class="list-heading">
+        <h2 id="tasks-heading">Your list</h2>
+        <span class="count">{{ remaining }} to do · {{ tasks|length }} total</span>
+      </div>
+      {% if tasks %}
+      <ul class="tasks">
+        {% for task in tasks %}
+        <li class="task{% if task.done %} done{% endif %}">
+          <form action="{{ url_for('toggle_task', task_index=loop.index0) }}" method="post">
+            <button class="toggle" type="submit" aria-label="{% if task.done %}Mark {{ task.title }} incomplete{% else %}Complete {{ task.title }}{% endif %}" aria-pressed="{{ 'true' if task.done else 'false' }}">{% if task.done %}✓{% endif %}</button>
+          </form>
+          <span class="task-title">{{ task.title }}</span>
+          <form action="{{ url_for('delete_task', task_index=loop.index0) }}" method="post">
+            <button class="delete" type="submit" aria-label="Delete {{ task.title }}" title="Delete task">×</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">Nothing on the list yet. Start with one small thing.</p>
+      {% endif %}
+    </section>
+  </main>
+  <script>
+    document.getElementById("today").textContent = new Intl.DateTimeFormat(undefined, {
+      weekday: "long", month: "long", day: "numeric"
+    }).format(new Date());
+  </script>
+</body>
+</html>
