@@ -8,9 +8,10 @@ from flask import Flask, abort, flash, redirect, render_template, request, url_f
 def create_app(data_file=None):
     app = Flask(__name__)
     app.secret_key = os.environ.get("SECRET_KEY", "local-development-key")
-    app.config["TASKS_FILE"] = Path(
-        data_file or os.environ.get("TASKS_FILE", Path(__file__).with_name("tasks.json"))
-    )
+    tasks_file = data_file or os.environ.get("TASKS_FILE")
+    if tasks_file is None:
+        tasks_file = Path("/tmp/tasks.json") if os.environ.get("VERCEL") else Path(__file__).with_name("tasks.json")
+    app.config["TASKS_FILE"] = Path(tasks_file)
 
     def load_tasks():
         path = app.config["TASKS_FILE"]

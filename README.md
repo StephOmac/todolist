@@ -41,3 +41,18 @@ The persistent disk requires a paid Render instance.
 The web app currently has one shared list and no sign-in. Anyone who can reach
 the deployed URL can view, add, complete, and delete its tasks; add authentication
 before putting private tasks there.
+
+## Deploy to Vercel
+
+The root `app.py` exposes the Flask instance for Vercel's Python runtime, and
+`vercel.json` configures its function. Import this repository as a new Vercel
+project, keep the project root at the repository root, and deploy; Vercel detects
+the Python dependencies from `requirements.txt`. You can also deploy with the
+Vercel CLI using `vercel` from the project directory.
+
+Set a `SECRET_KEY` environment variable in the Vercel project settings before
+deploying. On Vercel, tasks are written to `/tmp/tasks.json` because the deployed
+filesystem is not persistent. This is only suitable for a demo: tasks may
+disappear or differ between function instances. For lasting shared tasks, connect
+an external database or persistent storage service and replace the JSON storage.
+The app remains a single shared list without sign-in.
